@@ -6,26 +6,41 @@ import java.util.regex.Pattern;
 public class Search {
     private static int allTimes = 0;
     private static int errTimes = 0;
-    public static void main(String[] args) {
+    private static OutputStream outPutStream;
+
+    public static void main(String[] args) throws IOException {
+
 //        String dirPath = "C:\\Users\\59603\\Desktop\\log2(1)\\log2\\";
-        String dirPath = "C:\\Users\\59603\\Documents\\WeChat Files\\sjh596030631\\FileStorage\\File\\2020-04\\log\\";
+        String dirPath = "C:\\Users\\59603\\Documents\\WeChat Files\\sjh596030631\\FileStorage\\File\\2020-04\\归档 (2)\\";
+
+        try {
+            outPutStream = new FileOutputStream(dirPath+"log.txt");
+        } catch (FileNotFoundException e) {
+            System.out.println("文件打开异常");
+            e.printStackTrace();
+        }
         File dir = new File(dirPath);
         if (dir.isDirectory()) {
             File[] files = dir.listFiles();
             if (files == null) {
                 return;
             }
-            for (File f : files) {
+
+            for (int i = 0; i < files.length; i++) {
+                File f = files[i];
+
                 if (f.isDirectory()) {
                     File aa = new File(dirPath+f.getName());
                     // 父级文件目录，获取机器号码
-                    String ru = "[0-9]{10}";
+                    String ru = "[0-9]{10}"; // 10位机器号
                     Pattern pattern = Pattern.compile(ru);
                     Matcher matcher = pattern.matcher(f.getName());
                     if (matcher.find()) {
-                        System.out.print("编号："+matcher.group(0)+"    ");
+                        System.out.printf("分析第%s个  机器号：%s   ",i,matcher.group(0));
+                        outPutStream.write(("第"+(i+1)+"台机器\t机器号："+matcher.group(0)+"\t").getBytes());
                     } else {
                         System.out.print("未发现编号！    ");
+                        outPutStream.write("错误*****************************未发现编号************************************".getBytes());
                     }
 
                     File[] bb = aa.listFiles();
@@ -41,8 +56,12 @@ public class Search {
 
                         if (vvv.find()) {
                             System.out.print("日期："+vvv.group(0)+"    ");
+                            outPutStream.write(("日期："+vvv.group(0)+"    ").getBytes());
+
                         } else {
                             System.out.println("日期匹配错误！");
+                            outPutStream.write("错误*****************************日期匹配错误************************************".getBytes());
+
                         }
 
                         try {
@@ -50,7 +69,8 @@ public class Search {
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-
+                        outPutStream.write("\r\n".getBytes());
+                        outPutStream.write("\r\n".getBytes());
                     }
                 }
             }
@@ -69,6 +89,8 @@ public class Search {
             BigDecimal f = d.multiply(new BigDecimal("100"));
             System.out.println("     异常占比：" + f.toString() + " %");
         }
+        outPutStream.flush();
+        outPutStream.close();
     }
 
     public static void inputStream(String filepath) throws IOException {
@@ -81,10 +103,10 @@ public class Search {
         String lastTimeHour = "";
 
         while((str = bf.readLine()) != null){
-            if (str.contains("7DEFEEFE")) { // 取7D指令
+            if (str.contains("7DEFEEFE") || str.contains("7defeefe")) { // 取7D指令
                 allNum ++;
                 String reg = "7DEFEEFE10[0-3]"; // 匹配正常的光感日志
-                Pattern pattern = Pattern.compile(reg);
+                Pattern pattern = Pattern.compile(reg,Pattern.CASE_INSENSITIVE); //忽略大小写
                 Matcher matcher = pattern.matcher(str);
 
                 // 匹配发生时间 00:00:03:049
@@ -95,17 +117,21 @@ public class Search {
                     if (!lastTimeHour.equals(mmmm.group(0).substring(0,2))) {
                         lastTimeHour = mmmm.group(0).substring(0,2);
                         System.out.println();
+
                         System.out.print(lastTimeHour);
+                        outPutStream.write("\r\n".getBytes());
+                        outPutStream.write(lastTimeHour.getBytes());
                     }
                 }
 
                 if (matcher.find()) { // 正常
                     System.out.print("+");
+                    outPutStream.write('+');
                     rightNum ++;
                 } else { // 异常
                     errNum ++;
                     System.out.print("-");
-
+                    outPutStream.write('-');
                 }
             }
         }
